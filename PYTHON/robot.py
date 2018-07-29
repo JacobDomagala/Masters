@@ -19,21 +19,7 @@ APHASE = AIN1
 GY80_AINT_1 = 5
 GY80_M_DRDY = 7
 
-echo_sensors_pins = [[0 for x in range(2)] for y in range(4)]
-
-
-echo_sensors_pins[0][0] = 22
-echo_sensors_pins[0][1] = 23
-
-echo_sensors_pins[1][0] = 24
-echo_sensors_pins[1][1] = 29
-
-echo_sensors_pins[2][0] = 21
-echo_sensors_pins[2][1] = 26
-
-echo_sensors_pins[3][0] = 27
-echo_sensors_pins[3][1] = 28
-
+echo_sensors_pins = [[21,22], [26.23], [27,24], [28.29]]
 
 class RobotState:
     def __init__(self):
@@ -90,10 +76,26 @@ class Robot:
         self.m_CycleNumber = 0
         self.compass = i2c_hmc5883l.i2c_hmc5883l(1)
 
+        # Init_RPI()
         wiringpi.wiringPiSetup()
+
+        # Init_Motor()
+        wiringpi.pinMode(BIN2, wiringpi.OUTPUT)
+        wiringpi.pinMode(BIN1, wiringpi.OUTPUT)
+        wiringpi.pinMode(AIN2, wiringpi.OUTPUT)
+        wiringpi.pinMode(AIN1, wiringpi.OUTPUT)
+        wiringpi.pinMode(MOTOR_MODE, wiringpi.OUTPUT)
+        wiringpi.digitalWrite(MOTOR_MODE, wiringpi.HIGH)
+
+        wiringpi.softPwmCreate(AENBL, 0, 100)
+        wiringpi.softPwmCreate(BENBL, 0, 100)
+        wiringpi.softPwmWrite(AENBL, 0)
+        wiringpi.softPwmWrite(BENBL, 0)
+
         wiringpi.pinMode(GY80_AINT_1, wiringpi.INPUT)
         wiringpi.pinMode(GY80_M_DRDY, wiringpi.INPUT)
 
+        # Init_Usonic()
         for i in range(4):
            wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
            wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
