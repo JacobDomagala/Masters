@@ -174,11 +174,12 @@ def sterowanie():
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock_odb = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-ip_odb = "10.10.20.82"
+ip_odb = "10.10.20.48"
 port_odb = 4012
 
 
 def Wysylanie():
+    print("Wysylanie() start")
     dataSize = 4
 
     liczba = robotState.distLeft
@@ -200,7 +201,7 @@ def Wysylanie():
     print("srodek: " + data1)
     print("prawy: " + data2)
 
-    ipAddress = "10.10.20.82"
+    ipAddress = "10.10.20.48"
 
     port1 = 3533
     port2 = 3534
@@ -213,6 +214,7 @@ def Wysylanie():
     except:
         print("nie mozna wysylac danych")
         exit()
+    print("Wysylanie() end")
 
 
 pred_lew = 0
@@ -220,6 +222,7 @@ pred_praw = 0
 
 
 def Odbieranie():
+    print("Odbieranie() start")
     dataSize = 4
     data = ""
     senderport_odb = 3536
@@ -249,6 +252,7 @@ def Odbieranie():
 
     print("Lewa: " + pred_lew)
     print("Prawa: " + pred_praw)
+    print("Odbieranie() end")
 
 
 def main():
@@ -262,27 +266,28 @@ def main():
 
     #robot.Cycle()
     #robot.GetState(robotState)
-    while 1:
-       robot.SetMove(20,20, True)
-   #  while kb != 'q':
-   #     robot.GetState(robotState)
+    robot.SetMove(0,0, True)
+    while kb != 'q':
+       robot.GetState(robotState)
 
-   #     if kbhit():
-   #        kb = input()
+       if terminal_functions.kbhit() == True:
+          kb = input("insert something")
 
-   #     lastKb = kb
-   #     if lastKb == 'w':
-   #        Wysylanie()
-   #        Odbieranie()
+       lastKb = kb
+       if lastKb == 'w':
+          print("'w' insertet!")
+          Wysylanie()
+          Odbieranie()
 
-   #        robot.SetWheel(pred_lew,pred_praw)
+          robot.SetWheel(pred_lew,pred_praw)
 
-   #        break
+          break
 
-   #     if lastKb == 's':
-   #        robot.SetWheel(0,0)
-   #        break
-
+       if lastKb == 's':
+          print("STOP")
+          robot.SetWheel(0,0)
+          break
+    print("QUIT")
     #robot.Cycle()
     #robot.StopLog()
 

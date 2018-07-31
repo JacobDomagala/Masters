@@ -19,7 +19,7 @@ APHASE = AIN1
 GY80_AINT_1 = 5
 GY80_M_DRDY = 7
 
-echo_sensors_pins = [[21,22], [26.23], [27,24], [28.29]]
+echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29]]
 
 class RobotState:
     def __init__(self):
@@ -220,19 +220,19 @@ class Robot:
     def GetState(self, state):
         state.ax = self.m_AccelX
         state.ay = self.m_AccelY
-        state.az = self.m_Accel
-        state.angle = self.m_Angl
+        #state.az = self.m_Accel
+        state.angle = self.m_Angle
         state.distFront = self.m_DistFront
         state.distBack = self.m_DistBack
         state.distLeft = self.m_DistLeft
-        state.distRight = self.m_DistRigh
+        state.distRight = self.m_DistRight
         state.cycleMillis = self.m_CycleMillis
         state.wheelLeftPWM = self.m_LeftWheel
         state.wheelRightPWM = self.m_RightWheel
-        state.cycleNumber = self.m_CycleNumbe
+        state.cycleNumber = self.m_CycleNumber
         state.microsTimestamp = micros()
         state.millisTimestamp = millis()
-        state.sysTimestamp = time(NULL)
+        state.sysTimestamp = time.time()
 
     def SetMove(self, l, r, save_direction):
         wiringpi.softPwmWrite(AENBL,abs(l))

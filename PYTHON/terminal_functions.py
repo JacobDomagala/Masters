@@ -16,5 +16,5 @@ def changemode(dir):
     else:
         termios.tcsetattr( sys.stdin.fileno(), termios.TCSANOW, oldt)
 
-def khbit():
-    pass
+def kbhit():
+    return True
