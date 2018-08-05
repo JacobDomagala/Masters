@@ -156,7 +156,7 @@ class Robot:
         #self.m_AccelY = norm.YAxis
         #self.m_AccelZ = norm.ZAxis
 
-        self.Log()
+        #self.Log()
 
         self.m_CycleMillis = millis
 

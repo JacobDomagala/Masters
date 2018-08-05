@@ -1,20 +1,35 @@
-import termios
 import ctypes
-import sys
+import sys, termios, atexit
+from select import select
 
-oldt = termios.tcgetattr(sys.stdin.fileno())
-newt = termios.tcgetattr(sys.stdin.fileno())
+# save the terminal settings
+fd = sys.stdin.fileno()
+new_term = termios.tcgetattr(fd)
+old_term = termios.tcgetattr(fd)
 
-def changemode(dir):
-    if dir == 1:
-        global oldt
-        global newt
-        oldt = termios.tcgetattr(sys.stdin.fileno())
-        newt = oldt
-        newt[3] = newt[3] & ~( termios.ICANON | termios.ECHO )
-        termios.tcsetattr( sys.stdin.fileno(), termios.TCSANOW, oldt)
-    else:
-        termios.tcsetattr( sys.stdin.fileno(), termios.TCSANOW, oldt)
+# new terminal setting unbuffered
+new_term[3] = (new_term[3] & ~termios.ICANON & ~termios.ECHO)
+
+# switch to normal terminal
+def set_normal_term():
+    termios.tcsetattr(fd, termios.TCSAFLUSH, old_term)
+
+# switch to unbuffered terminal
+def set_curses_term():
+    termios.tcsetattr(fd, termios.TCSAFLUSH, new_term)
+
+def putch(ch):
+    sys.stdout.write(ch)
+
+def getch():
+    return sys.stdin.read(1)
+
+def getche():
+    ch = getch()
+    putch(ch)
+    return ch
 
 def kbhit():
-    return True
+    dr,dw,de = select([sys.stdin], [], [], 0)
+    return not (dr == [])
+

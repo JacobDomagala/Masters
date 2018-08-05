@@ -2,6 +2,10 @@ import DB
 import robot
 import terminal_functions
 import socket
+import sys
+import termios
+import contextlib
+import sys, termios, atexit
 
 robotState = robot.RobotState()
 robot = robot.Robot()
@@ -223,22 +227,27 @@ pred_praw = 0
 
 def Odbieranie():
     print("Odbieranie() start")
+    global pred_lew
+    global pred_praw
     dataSize = 4
     data = ""
     senderport_odb = 3536
 
     for i in range(2):
         try:
-            data, server = sock_odb.recvfrom(dataSize)
+            print("czekam")
+            data = sock_odb.recv(dataSize)
+            print("sobie")
         except Exception as e:
+            print("wyjatek kurwa")
             print(e)
             exit()
 
-        print("Data: " + data)
+        print("Data: " + str(data))
 
         sum = int(data)
 
-        print("Predkosc: " + sum)
+        print("Predkosc: " + str(sum))
 
         if sum >= 40:
             sum = 40
@@ -250,28 +259,29 @@ def Odbieranie():
         if i == 1:
             pred_praw = sum
 
-    print("Lewa: " + pred_lew)
-    print("Prawa: " + pred_praw)
+    print("Lewa: " + str(pred_lew))
+    print("Prawa: " + str(pred_praw))
     print("Odbieranie() end")
 
-
 def main():
-    # changemode(1) // zmiana trybu terminala na nieblokujacy
-
     priority = 70
     kb = 0
     lastKb = 0
 
-    sock_odb.bind((ip_odb, port_odb))
+    sock_odb.bind(('10.10.20.82', port_odb))
 
-    #robot.Cycle()
-    #robot.GetState(robotState)
-    robot.SetMove(0,0, True)
+    # robot.Cycle()
+    # robot.GetState(robotState)
+    robot.SetMove(0, 0, True)
+
+    atexit.register(terminal_functions.set_normal_term)
+    terminal_functions.set_curses_term()
+
     while kb != 'q':
        robot.GetState(robotState)
 
-       if terminal_functions.kbhit() == True:
-          kb = input("insert something")
+       if terminal_functions.kbhit():
+          kb = terminal_functions.getch()
 
        lastKb = kb
        if lastKb == 'w':
@@ -279,17 +289,19 @@ def main():
           Wysylanie()
           Odbieranie()
 
+          print(str(pred_lew))
+          print(str(pred_praw))
           robot.SetWheel(pred_lew,pred_praw)
-
-          break
+          robot.Cycle()
 
        if lastKb == 's':
           print("STOP")
           robot.SetWheel(0,0)
           break
-    print("QUIT")
-    #robot.Cycle()
-    #robot.StopLog()
+
+    # print("QUIT")
+    # robot.Cycle()
+    # robot.StopLog()
 
 if __name__ == "__main__":
     main()
