@@ -120,6 +120,7 @@ class Robot:
         return self.compas.readRaw()
 
     def Cycle(self):
+        print("Cycle() in")
         start_ms = millis
         self.m_CycleNumber += 1
 
@@ -134,15 +135,15 @@ class Robot:
         self.m_DistRight = self.UsonicReadCM(
             echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75
 
-        self.compass.setOption(self.compass.ModeRegister,
-                               self.compass.MeasurementSingleShot)
+      #   self.compass.setOption(self.compass.ModeRegister,
+      #                          self.compass.MeasurementSingleShot)
 
-        while wiringpi.digitalRead(GY80_M_DRDY) > 0:
-            pass
-        while wiringpi.digitalRead(GY80_M_DRDY) == 0:
-            pass
+      #   while wiringpi.digitalRead(GY80_M_DRDY) > 0:
+      #       pass
+      #   while wiringpi.digitalRead(GY80_M_DRDY) == 0:
+      #       pass
 
-        self.m_Angle = 20.0  # self.compass.getAngle()
+        #self.m_Angle = 20.0  # self.compass.getAngle()
 
         #act = Activites()
         #act = self.accelerometer.readActivites(False)
@@ -159,6 +160,7 @@ class Robot:
         #self.Log()
 
         self.m_CycleMillis = millis
+        print("Cycle() out")
 
         #return self.m_CycleMillis
 
@@ -182,6 +184,7 @@ class Robot:
         time.sleep(seconds/1000000)
 
     def UsonicReadCM(self, trig, echo):
+        print("UnisonicReadCM() start")
         wiringpi.digitalWrite(trig, wiringpi.HIGH)
         self.delayMicroseconds(10)
         wiringpi.digitalWrite(trig, wiringpi.LOW)
@@ -214,7 +217,7 @@ class Robot:
         distance = travelTime / 58.0
 
         self.delayMicroseconds(10)
-
+        print("UnisonicReadCM() end")
         return distance
 
     def GetState(self, state):

@@ -213,8 +213,8 @@ def Wysylanie():
 
     try:
         sock.sendto(data.encode(), (ipAddress, port1))
-        sock.sendto(data.encode(), (ipAddress, port2))
-        sock.sendto(data.encode(), (ipAddress, port3))
+        sock.sendto(data1.encode(), (ipAddress, port2))
+        sock.sendto(data2.encode(), (ipAddress, port3))
     except:
         print("nie mozna wysylac danych")
         exit()
@@ -235,19 +235,16 @@ def Odbieranie():
 
     for i in range(2):
         try:
-            print("czekam")
-            data = sock_odb.recv(dataSize)
-            print("sobie")
+            data = sock_odb.recv(dataSize).decode()
         except Exception as e:
-            print("wyjatek kurwa")
-            print(e)
+            print("Exception: " + e)
             exit()
 
-        print("Data: " + str(data))
+        print("Data from Matlab: " + data)
 
         sum = int(data)
 
-        print("Predkosc: " + str(sum))
+        #print("Predkosc: " + str(sum))
 
         if sum >= 40:
             sum = 40
@@ -270,12 +267,14 @@ def main():
 
     sock_odb.bind(('10.10.20.82', port_odb))
 
-    # robot.Cycle()
-    # robot.GetState(robotState)
+    robot.Cycle()
+    robot.GetState(robotState)
     robot.SetMove(0, 0, True)
 
     atexit.register(terminal_functions.set_normal_term)
     terminal_functions.set_curses_term()
+
+    print_main_menu()
 
     while kb != 'q':
        robot.GetState(robotState)
@@ -284,13 +283,14 @@ def main():
           kb = terminal_functions.getch()
 
        lastKb = kb
-       if lastKb == 'w':
+       if lastKb == 'e':
           print("'w' insertet!")
           Wysylanie()
+          robot.delayMicroseconds(40)
           Odbieranie()
 
-          print(str(pred_lew))
-          print(str(pred_praw))
+          print("Lewe kolo:" + str(pred_lew) )
+          print("Prawe kolo:" + str(pred_praw) )
           robot.SetWheel(pred_lew,pred_praw)
           robot.Cycle()
 
@@ -300,7 +300,7 @@ def main():
           break
 
     # print("QUIT")
-    # robot.Cycle()
+    robot.Cycle()
     # robot.StopLog()
 
 if __name__ == "__main__":
