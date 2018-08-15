@@ -176,8 +176,9 @@ def sterowanie():
     cz_p_pop = cz_p_akt
 
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock_odb = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("10.10.20.48", 3533))
+sock_odb = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ip_odb = "10.10.20.48"
 port_odb = 4012
 
