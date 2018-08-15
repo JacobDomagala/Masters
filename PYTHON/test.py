@@ -1,17 +1,19 @@
-#!/usr/bin/env python
+def Wysylanie():
+    print("Wysylanie() start")
 
-import socket
+    e = 50.8474756930
+    b = 20.034
+    c = 60
+    distLeft = min(e, 60)
+    distFront = min(int(b), 40)
+    distRight = min(c, 40)
 
+    print(f"Left sensor: {distLeft}")
+    print(f"Front sensor: {distFront}")
+    print(f"Right sensor: {distRight}")
 
-TCP_IP = '127.0.0.1'
-TCP_PORT = 5005
-BUFFER_SIZE = 1024
-MESSAGE = "Hello, World!"
+    #sock.send(json.dumps([distLeft, distFront, distRight]).encode())
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((TCP_IP, TCP_PORT))
-s.send(MESSAGE.encode())
-data = s.recv(BUFFER_SIZE)
-s.close()
+    print("Wysylanie() end")
 
-print("received data:", data)
+Wysylanie()

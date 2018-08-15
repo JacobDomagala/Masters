@@ -1,14 +1,11 @@
-import DB
 import robot
 import terminal_functions
 import socket
 import sys
 import termios
 import contextlib
-import sys, termios, atexit
-
-robotState = robot.RobotState()
-robot = robot.Robot()
+import atexit
+import json
 
 def robot_info():
     print("\r\nRobot Kudlaty (2016) oparty o podzespoly\r\n")
@@ -33,244 +30,60 @@ def print_main_menu():
     print("d - kat i odleglosc\r\n")
     print("? - informacje o robocie\r\n")
 
-
-mtmState = 0
-mtmCount = 0
-
-
-def MakeTerrainMap(robot, state, db):
-    if mtmState == 1:
-        db.clearTerrainMap()
-        mtmState = 2
-    elif mtmState == 2:
-        robot.SetWheel(-33, 33)
-        mtmCount += 1
-        if mtmCount > 400:
-            mtmState = 0
-            mtmCount = 0
-            robot.SetWheel(0, 0)
-        db.WriteStateAsMap(state)
-    elif mtmState == 0:
-        pass
-    else:
-        mtmState = 0
-
-
-def ProcessCommand(cmd, robot, state, db):
-    if cmd == "mm":
-        mtmState = 1
-    elif cmd == "cm":
-        db.clearTerrainMap()
-    MakeTerrainMap(robot, state, db)
-
-
-def Rozmywanie(a, b, c, z):
-    parametr1 = (z-a)/(b-a)
-    parametr2 = (c-z)/(c-b)
-    return min(parametr1, parametr2)
-
-
-def Dopasowanie(x):
-    wynsm = rozmywanie(1, 2, 35, x)
-    wynbi = rozmywanie(2, 35, 36, x)
-    return wynsm < wynbi
-
-
-cz_l = 0.0
-cz_p = 0.0
-cz_s = 0.0
-
-cz_l_pop = 0.0
-cz_p_pop = 0.0
-cz_s_pop = 0.0
-
-cz_l_akt = 0.0
-cz_p_akt = 0.0
-cz_s_akt = 0.0
-
-a = 0.2
-
-lewa = 0
-srodek = 0
-prawa = 0
-lewa_p = 0
-prawa_p = 0
-lewa_predkosc = 0
-prawa_predkosc = 0
-
-
-def sterowanie():
-    cz_l = robotState.distLeft
-    cz_s = robotState.distFront
-    cz_p = robotState.distRight
-
-    if cz_l > 35:
-        cz_l = 35
-    if cz_s > 35:
-        cz_s = 35
-    if cz_p > 35:
-        cz_p = 35
-
-    if cz_l < 2:
-        cz_l = 2
-    if cz_s < 2:
-        cz_s = 2
-    if cz_p < 2:
-        cz_p = 2
-
-    cz_l_akt = cz_l * a + (cz_l_pop*(1-a))
-    cz_s_akt = cz_s * a + (cz_s_pop*(1-a))
-    cz_p_akt = cz_p * a + (cz_p_pop*(1-a))
-
-    print("Lewa: %f Srodek: %f Prawa: %f\n\n", cz_l_akt, cz_s_akt, cz_p_akt)
-
-    lewa = dopasowanie(cz_l_akt)
-    srodek = dopasowanie(cz_s_akt)
-    prawa = dopasowanie(cz_p_akt)
-
-    if lewa == 0 and srodek == 0 and prawa == 0:
-        lewa_predkosc = 40
-        prawa_predkosc = 40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(40, 40)
-    if lewa == 0 and srodek == 0 and prawa == 1:
-        lewa_predkosc = -40
-        prawa_predkosc = 40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(-40, 40)
-    if lewa == 0 and srodek == 1 and prawa == 0:
-        lewa_predkosc = -40
-        prawa_predkosc = 40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(-40, 40)
-    if lewa == 0 and srodek == 1 and prawa == 1:
-        lewa_predkosc = -40
-        prawa_predkosc = 40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(-40, 40)
-    if lewa == 1 and srodek == 0 and prawa == 0:
-        lewa_predkosc = 40
-        prawa_predkosc = -40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(40, -40)
-    if lewa == 1 and srodek == 0 and prawa == 1:
-        lewa_predkosc = 40
-        prawa_predkosc = 40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(40, 40)
-    if lewa == 1 and srodek == 1 and prawa == 0:
-        lewa_predkosc = 40
-        prawa_predkosc = -40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(40, -40)
-    if lewa == 1 and srodek == 1 and prawa == 1:
-        lewa_predkosc = -40
-        prawa_predkosc = 40
-        if lewa_p != lewa_predkosc or prawa_p != prawa_predkosc:
-            robot.SetWheel(-40, 40)
-
-    lewa_p = lewa_predkosc
-    prawa_p = prawa_predkosc
-    cz_l_pop = cz_l_akt
-    cz_s_pop = cz_s_akt
-    cz_p_pop = cz_p_akt
-
-
+TCP_IP = "10.42.0.249"
+TCP_PORT = 5006
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(("10.10.20.48", 3533))
-sock_odb = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-ip_odb = "10.10.20.48"
-port_odb = 4012
-
-
-def Wysylanie():
-    print("Wysylanie() start")
-    dataSize = 4
-
-    liczba = robotState.distLeft
-    liczba1 = robotState.distFront
-    liczba2 = robotState.distRight
-
-    if liczba > 40:
-        liczba = 40
-    if liczba1 > 40:
-        liczba1 = 40
-    if liczba2 > 40:
-        liczba2 = 40
-
-    data = "%.0f" % liczba
-    data1 = "%.0f" % liczba1
-    data2 = "%.0f" % liczba2
-
-    print("lewy: " + data)
-    print("srodek: " + data1)
-    print("prawy: " + data2)
-
-    ipAddress = "10.10.20.48"
-
-    port1 = 3533
-    port2 = 3534
-    port3 = 3535
-
-    try:
-        sock.sendto(data.encode(), (ipAddress, port1))
-        sock.sendto(data1.encode(), (ipAddress, port2))
-        sock.sendto(data2.encode(), (ipAddress, port3))
-    except:
-        print("nie mozna wysylac danych")
-        exit()
-    print("Wysylanie() end")
-
 
 pred_lew = 0
 pred_praw = 0
 
-
-def Odbieranie():
-    print("Odbieranie() start")
+def Wysylanie(conn, robotState):
     global pred_lew
     global pred_praw
-    dataSize = 4
-    data = ""
-    senderport_odb = 3536
 
-    for i in range(2):
-        try:
-            data = sock_odb.recv(dataSize).decode()
-        except Exception as e:
-            print("Exception: " + e)
-            exit()
+    print("Wysylanie() start")
 
-        print("Data from Matlab: " + data)
+    distLeft = min(int(robotState.distLeft), 40)
+    distFront = min(int(robotState.distFront), 40)
+    distRight = min(int(robotState.distRight), 40)
 
-        sum = int(data)
+    print("Left sensor: " + str(distLeft))
+    print("Front sensor: " + str(distFront))
+    print("Right sensor: " + str(distRight))
 
-        #print("Predkosc: " + str(sum))
+    bytesSent = conn.send(json.dumps([distLeft, distFront, distRight]).encode())
 
-        if sum >= 40:
-            sum = 40
-        if sum <= -40:
-            sum = -40
+    print(str(bytesSent) + " bytes sent to Matlab")
+    rawData = conn.recv(8).decode()
+    print("Raw data: " + str(rawData))
+    decodedData = json.loads(rawData)
+    print("After json.loads: " + str(decodedData))
 
-        if i == 0:
-            pred_lew = sum
-        if i == 1:
-            pred_praw = sum
+    pred_lew = decodedData[0]
+    pred_praw = decodedData[1]
 
     print("Lewa: " + str(pred_lew))
     print("Prawa: " + str(pred_praw))
-    print("Odbieranie() end")
+
+    print("Wysylanie() end")
 
 def main():
-    priority = 70
     kb = 0
     lastKb = 0
 
-    sock_odb.bind(('10.10.20.82', port_odb))
+    print("Waiting for Matlab to cennect...")
+    sock.bind((TCP_IP, TCP_PORT))
+    sock.listen(1)
 
-    robot.Cycle()
-    robot.GetState(robotState)
-    robot.SetMove(0, 0, True)
+    conn, addr = sock.accept()
+    print("Matlab connected! Address" + str(addr))
+
+    shaggy = robot.Robot()
+    robotState = robot.RobotState()
+
+    shaggy.Cycle()
+    shaggy.GetState(robotState)
+    shaggy.SetMove(0, 0, True)
 
     atexit.register(terminal_functions.set_normal_term)
     terminal_functions.set_curses_term()
@@ -278,31 +91,27 @@ def main():
     print_main_menu()
 
     while kb != 'q':
-       robot.GetState(robotState)
+       shaggy.GetState(robotState)
 
        if terminal_functions.kbhit():
           kb = terminal_functions.getch()
 
        lastKb = kb
        if lastKb == 'e':
-          print("'w' insertet!")
-          Wysylanie()
-          robot.delayMicroseconds(40)
-          Odbieranie()
+          print("'e' insertet!")
+          Wysylanie(conn, robotState)
 
-          print("Lewe kolo:" + str(pred_lew) )
-          print("Prawe kolo:" + str(pred_praw) )
-          robot.SetWheel(pred_lew,pred_praw)
-          robot.Cycle()
+          #shaggy.SetWheel(pred_lew,pred_praw)
+          shaggy.Cycle()
 
        if lastKb == 's':
           print("STOP")
-          robot.SetWheel(0,0)
+          shaggy.SetWheel(0,0)
           break
 
-    # print("QUIT")
-    robot.Cycle()
-    # robot.StopLog()
+    print("QUIT")
+    shaggy.Cycle()
+    sock.close()
 
 if __name__ == "__main__":
     main()
