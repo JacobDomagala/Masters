@@ -12,7 +12,7 @@ s.bind((TCP_IP, TCP_PORT))
 s.listen(1)
 
 conn, addr = s.accept()
-print(f'Connection address: {addr}')
+print('Connection address: ' + str(addr))
 #data = json.dumps([40, 20, 20]).encode()
 
 #BUFFER_SIZE = sys.getsizeof(data)
@@ -22,6 +22,7 @@ while 1:
     #print(f"Sent {sent} bytes")
     data2 = conn.recv(20)
     if not data2: break
-    print(f"received data: {data2}")
+    print("received data: " + str(data2))
+    conn.send("[40, 20]".encode())
 
 conn.close()
