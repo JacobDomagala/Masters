@@ -18,7 +18,7 @@ APHASE = AIN1
 GY80_AINT_1 = 5
 GY80_M_DRDY = 7
 
-echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29]]
+echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29], [11,25]]
 
 class RobotState:
     def __init__(self):
@@ -31,10 +31,11 @@ class RobotState:
         self.angle = 0.0
 
         # distances from Ultra Sonic sensors, [cm]
-        self.distFront = 0.0
-        self.distBack = 0.0
         self.distLeft = 0.0
         self.distRight = 0.0
+        self.distFrontLeft = 0.0
+        self.distFrontRight = 0.0
+        self.distFront = 0.0
 
         # PWM power set to wheels, 0 - 100 [%]
         self.wheelRightPWM = 0
@@ -63,10 +64,13 @@ class Robot:
         self.m_LeftWheel = 0
         self.m_RightWheel = 0
         self.m_CycleMillis = 0
+
         self.m_DistLeft = 0.0
         self.m_DistRight = 0.0
+        self.m_DistFrontLeft = 0.0
+        self.m_DistFrontRight = 0.0
         self.m_DistFront = 0.0
-        self.m_DistBack = 0.0
+
         self.m_AccelX = 0.0
         self.m_AccelY = 0.0
         self.m_AccelZ = 0.0
@@ -94,12 +98,10 @@ class Robot:
         wiringpi.pinMode(GY80_M_DRDY, wiringpi.INPUT)
 
         # Init_Usonic()
-        for i in range(4):
+        for i in range(len(echo_sensors_pins)):
            wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
            wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
            wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
-
-        #self.accelerometer = ADXL345()
 
     def SetWheel(self, left, right):
         self.m_LeftWheel = left
@@ -110,14 +112,28 @@ class Robot:
 
         self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
 
-        self.m_DistFront = self.UsonicReadCM(
+        #prosto lewy
+        #self.m_DistFront
+        self.m_DistFrontLeft = self.UsonicReadCM(
             echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7
-        self.m_DistLeft = self.UsonicReadCM(
+
+        # teraz to jest prawy
+        #self.m_DistLeft
+        self.m_DistRight = self.UsonicReadCM(
             echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75
-        self.m_DistBack = self.UsonicReadCM(
+
+        # prosto prawy
+        #self.m_DistBack
+        self.m_DistFrontRight = self.UsonicReadCM(
             echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7
+
+        # terato to jest lewy
+        #self.m_DistRight
         self.m_DistRight = self.UsonicReadCM(
             echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75
+
+        self.m_DistFront = self.UsonicReadCM(
+            echo_sensors_pins[4][0], echo_sensors_pins[4][1]) + 8
 
         self.m_CycleMillis = millis
 
@@ -164,10 +180,13 @@ class Robot:
         state.ax = self.m_AccelX
         state.ay = self.m_AccelY
         state.angle = self.m_Angle
-        state.distFront = self.m_DistFront
-        state.distBack = self.m_DistBack
+
         state.distLeft = self.m_DistLeft
         state.distRight = self.m_DistRight
+        state.distFrontLeft = self.m_DistFrontLeft
+        state.distFrontRight = self.m_DistFrontRight
+        state.distFront = self.m_DistFront
+
         state.cycleMillis = self.m_CycleMillis
         state.wheelLeftPWM = self.m_LeftWheel
         state.wheelRightPWM = self.m_RightWheel

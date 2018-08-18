@@ -21,14 +21,8 @@ def robot_info():
 
 def print_main_menu():
     print("Wybierz:\r\n")
-    print("m - sterowanie reczne\r\n")
-    print("t - wczytaj trajektorie z pliku\r\n")
-    print("e - tryb ucieczki od przeszkody\r\n")
-    print("k - kalibracja magnetometru (kompasu)\r\n")
-    print("w - regulacja kata\r\n")
-    print("o - regulacja odleglosci\r\n")
-    print("d - kat i odleglosc\r\n")
-    print("? - informacje o robocie\r\n")
+    print("w - omijanie przeszkod Fuzzy\r\n")
+    print("h - informacje o robocie\r\n")
 
 TCP_IP = "10.42.0.249"
 TCP_PORT = 5006
@@ -83,7 +77,6 @@ def main():
 
     shaggy.Cycle()
     shaggy.GetState(robotState)
-    shaggy.SetMove(0, 0, True)
 
     atexit.register(terminal_functions.set_normal_term)
     terminal_functions.set_curses_term()
