@@ -117,6 +117,7 @@ class Robot:
         self.m_DistFrontLeft = self.UsonicReadCM(
             echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7
 
+
         # teraz to jest prawy
         #self.m_DistLeft
         self.m_DistRight = self.UsonicReadCM(
@@ -129,7 +130,7 @@ class Robot:
 
         # terato to jest lewy
         #self.m_DistRight
-        self.m_DistRight = self.UsonicReadCM(
+        self.m_DistLeft = self.UsonicReadCM(
             echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75
 
         self.m_DistFront = self.UsonicReadCM(

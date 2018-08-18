@@ -27,6 +27,7 @@ def print_main_menu():
 TCP_IP = "10.42.0.249"
 TCP_PORT = 5006
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((TCP_IP, TCP_PORT))
 
 pred_lew = 0
 pred_praw = 0
@@ -37,18 +38,22 @@ def Wysylanie(conn, robotState):
 
     print("Wysylanie() start")
 
-    distLeft = min(int(robotState.distLeft), 40)
+    distFrontLeft = min(int(robotState.distFrontLeft), 40)  
+    distFrontRight = min(int(robotState.distFrontRight), 40)
     distFront = min(int(robotState.distFront), 40)
     distRight = min(int(robotState.distRight), 40)
+    distLeft = min(int(robotState.distLeft), 40)
 
+    print("FrontLeft sensor: " + str(distFrontLeft))
+    print("FrontRight sensor: " + str(distFrontRight))
     print("Left sensor: " + str(distLeft))
     print("Front sensor: " + str(distFront))
     print("Right sensor: " + str(distRight))
 
-    bytesSent = conn.send(json.dumps([distLeft, distFront, distRight]).encode())
+    bytesSent = sock.send(json.dumps([distFrontLeft, distFrontRight, distLeft, distFront, distRight]).encode())
 
     print(str(bytesSent) + " bytes sent to Matlab")
-    rawData = conn.recv(8).decode()
+    rawData = sock.recv(8).decode()
     print("Raw data: " + str(rawData))
     decodedData = json.loads(rawData)
     print("After json.loads: " + str(decodedData))
@@ -66,11 +71,11 @@ def main():
     lastKb = 0
 
     print("Waiting for Matlab to cennect...")
-    sock.bind((TCP_IP, TCP_PORT))
-    sock.listen(1)
+#    sock.bind((TCP_IP, TCP_PORT))
+#    sock.listen(1)
 
-    conn, addr = sock.accept()
-    print("Matlab connected! Address" + str(addr))
+#    conn, addr = sock.accept()
+#    print("Matlab connected! Address" + str(addr))
 
     shaggy = robot.Robot()
     robotState = robot.RobotState()
@@ -92,7 +97,7 @@ def main():
        lastKb = kb
        if lastKb == 'e':
           print("'e' insertet!")
-          Wysylanie(conn, robotState)
+          Wysylanie(10, robotState)
 
           #shaggy.SetWheel(pred_lew,pred_praw)
           shaggy.Cycle()
