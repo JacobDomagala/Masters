@@ -1,15 +1,24 @@
-plik=fopen('wyniki.txt','wt');
-while 1
-y = fread(lewa_cz,4);
-%pause(0.2);
-x = fread(srod_cz,4);
-%pause(0.2);
-g = fread(prawy_cz,4);
-%pause(0.2);
-left = str2double(string(transpose(y)));
-front = str2double(string(transpose(x)));
-right = str2double(string(transpose(g)));
+%plik=fopen('wyniki.txt','wt');
 
+obj = tcpip('10.42.0.249', 5006)
+obj.timeout = 0.1
+fopen(obj);
+
+while 1
+
+incoming = fread(obj, 12, 'uchar');
+
+if isempty(incoming)
+%nothing
+else
+    
+data = jsondecode(transpose(native2unicode(incoming)))
+
+left = str2num(string(data(1)))
+front = str2num(string(data(2)))
+right = str2num(string(data(3)))
+
+%fwrite(obj, jsonencode({40; 40}))
 
 parametr1_lewa = (left - 1)/(2-1);
 parametr2_lewa = (40 - left)/(40-2);
@@ -45,52 +54,46 @@ else prawa = 1;
 end
 
 if ((lewa == 0) && (srodek == 0) && (prawa == 0))
-w = '40';
-h = '40';
+w = 40;
+h = 40;
 end
 
 if (lewa == 0 && srodek == 0 && prawa == 1)
-w = '-40';
-h = '40';
+w = -40;
+h = 40;
 end
 
 if (lewa == 0 && srodek == 1 && prawa == 0)
-w = '-40';
-h = '40';
+w = -40;
+h = 40;
 end
 
 if (lewa == 0 && srodek == 1 && prawa == 1)
-w = '-40';
-h = '40';
+w = -40;
+h = 40;
 end
 
 if (lewa == 1 && srodek == 0 && prawa == 0)
-w = '40';
-h = '-40';
+w = 40;
+h = -40;
 end
 
 if (lewa == 1 && srodek == 0 && prawa == 1)
-w = '40';
-h = '40';
+w = 40;
+h = 40;
 end
 
 if (lewa == 1 && srodek == 1 && prawa == 0)
-w = '40';
-h = '-40';
+w = 40;
+h = -40;
 end
 
 if (lewa == 1 && srodek == 1 && prawa == 1)
-w = '-40';
-h = '40';
+w = -40;
+h = 40;
 end
 
-%L = num2str(w);
-%P = num2str(h);
-%pause(0.1);
-format = 'lewa: %2.2f, srodek: %2.2f, prawa: %2.2f lewe kolo: %s prawe kolo: %s \n';
-fprintf(plik, format,left,front,right,w,h);
-fwrite(pred,w);
-pause(0.3);
-fwrite(pred,h);
-%pause(0.1);
+fwrite(obj, jsonencode({w;h}));
+
+end
 end
