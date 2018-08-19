@@ -1,4 +1,3 @@
-import i2c_hmc5883l
 import wiringpi
 import time
 
@@ -19,7 +18,7 @@ APHASE = AIN1
 GY80_AINT_1 = 5
 GY80_M_DRDY = 7
 
-echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29]]
+echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29], [11,25]]
 
 class RobotState:
     def __init__(self):
@@ -32,10 +31,11 @@ class RobotState:
         self.angle = 0.0
 
         # distances from Ultra Sonic sensors, [cm]
-        self.distFront = 0.0
-        self.distBack = 0.0
         self.distLeft = 0.0
         self.distRight = 0.0
+        self.distFrontLeft = 0.0
+        self.distFrontRight = 0.0
+        self.distFront = 0.0
 
         # PWM power set to wheels, 0 - 100 [%]
         self.wheelRightPWM = 0
@@ -64,17 +64,19 @@ class Robot:
         self.m_LeftWheel = 0
         self.m_RightWheel = 0
         self.m_CycleMillis = 0
+
         self.m_DistLeft = 0.0
         self.m_DistRight = 0.0
+        self.m_DistFrontLeft = 0.0
+        self.m_DistFrontRight = 0.0
         self.m_DistFront = 0.0
-        self.m_DistBack = 0.0
+
         self.m_AccelX = 0.0
         self.m_AccelY = 0.0
         self.m_AccelZ = 0.0
         self.m_Angle = 0.0
         self.m_SilenceInit = True
         self.m_CycleNumber = 0
-        self.compass = i2c_hmc5883l.i2c_hmc5883l(1)
 
         # Init_RPI()
         wiringpi.wiringPiSetup()
@@ -96,95 +98,49 @@ class Robot:
         wiringpi.pinMode(GY80_M_DRDY, wiringpi.INPUT)
 
         # Init_Usonic()
-        for i in range(4):
+        for i in range(len(echo_sensors_pins)):
            wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
            wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
            wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
-
-        #self.accelerometer = ADXL345()
 
     def SetWheel(self, left, right):
         self.m_LeftWheel = left
         self.m_RightWheel = right
 
-    def CompassCalibrationSetOffset(xo, yo):
-        # self.compass.setOffset(xo,yo)
-        pass
-
-    def CompassCalibrationCycle(l, r):
-        while digitalRead(GY80_M_DRDY) > 0:
-            pass
-        while digitalRead(GY80_M_DRDY) == 0:
-            pass
-
-        return self.compas.readRaw()
-
     def Cycle(self):
-        print("Cycle() in")
-        start_ms = millis
         self.m_CycleNumber += 1
 
         self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
 
-        self.m_DistFront = self.UsonicReadCM(
+        #prosto lewy
+        #self.m_DistFront
+        self.m_DistFrontLeft = self.UsonicReadCM(
             echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7
-        self.m_DistLeft = self.UsonicReadCM(
+
+        # teraz to jest prawy
+        #self.m_DistLeft
+        self.m_DistRight = self.UsonicReadCM(
             echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75
-        self.m_DistBack = self.UsonicReadCM(
+
+        # prosto prawy
+        #self.m_DistBack
+        self.m_DistFrontRight = self.UsonicReadCM(
             echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7
+
+        # terato to jest lewy
+        #self.m_DistRight
         self.m_DistRight = self.UsonicReadCM(
             echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75
 
-      #   self.compass.setOption(self.compass.ModeRegister,
-      #                          self.compass.MeasurementSingleShot)
-
-      #   while wiringpi.digitalRead(GY80_M_DRDY) > 0:
-      #       pass
-      #   while wiringpi.digitalRead(GY80_M_DRDY) == 0:
-      #       pass
-
-        #self.m_Angle = 20.0  # self.compass.getAngle()
-
-        #act = Activites()
-        #act = self.accelerometer.readActivites(False)
-
-        # while not act.isDataReady:
-        #    act = self.accelerometer.readActivites(False)
-
-        #norm = self.accelerometer.readNormalize()
-
-        #self.m_AccelX = norm.XAxis
-        #self.m_AccelY = norm.YAxis
-        #self.m_AccelZ = norm.ZAxis
-
-        #self.Log()
+        self.m_DistFront = self.UsonicReadCM(
+            echo_sensors_pins[4][0], echo_sensors_pins[4][1]) + 8
 
         self.m_CycleMillis = millis
-        print("Cycle() out")
-
-        #return self.m_CycleMillis
-
-    def CheckTimeout(self, start_us, timeout_us):
-        res = 0
-        curr_us = micros
-
-        if curr_us <= start_us:
-            if (curr_us + (0xFFFFFFFF - start_us) >= timeout_us):
-                res = 1
-            else:
-                res = 0
-        else:
-            if (curr_us - start_us) >= timeout_us:
-                res = 1
-            else:
-                res = 0
-        return res
 
     def delayMicroseconds(self, seconds):
         time.sleep(seconds/1000000)
 
     def UsonicReadCM(self, trig, echo):
-        print("UnisonicReadCM() start")
         wiringpi.digitalWrite(trig, wiringpi.HIGH)
         self.delayMicroseconds(10)
         wiringpi.digitalWrite(trig, wiringpi.LOW)
@@ -217,18 +173,20 @@ class Robot:
         distance = travelTime / 58.0
 
         self.delayMicroseconds(10)
-        print("UnisonicReadCM() end")
+
         return distance
 
     def GetState(self, state):
         state.ax = self.m_AccelX
         state.ay = self.m_AccelY
-        #state.az = self.m_Accel
         state.angle = self.m_Angle
-        state.distFront = self.m_DistFront
-        state.distBack = self.m_DistBack
+
         state.distLeft = self.m_DistLeft
         state.distRight = self.m_DistRight
+        state.distFrontLeft = self.m_DistFrontLeft
+        state.distFrontRight = self.m_DistFrontRight
+        state.distFront = self.m_DistFront
+
         state.cycleMillis = self.m_CycleMillis
         state.wheelLeftPWM = self.m_LeftWheel
         state.wheelRightPWM = self.m_RightWheel
