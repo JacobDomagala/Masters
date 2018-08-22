@@ -1,8 +1,15 @@
 import wiringpi
 import time
 
-millis = lambda: int(round(time.time() * 1000))
-micros = lambda: int(round(time.time() * 1000000))
+def clamp(val, low, high):
+   return min(max(val, low), high)
+
+def millis():
+   return int(round(time.time() * 1000))
+
+def micros():
+   return int(round(time.time() * 1000000))
+
 
 BIN2 = 0
 BIN1 = 1
@@ -18,7 +25,8 @@ APHASE = AIN1
 GY80_AINT_1 = 5
 GY80_M_DRDY = 7
 
-echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29], [11,25]]
+echo_sensors_pins = [[21, 22], [26, 23], [27, 24], [28, 29], [11, 25]]
+
 
 class RobotState:
     def __init__(self):
@@ -99,9 +107,9 @@ class Robot:
 
         # Init_Usonic()
         for i in range(len(echo_sensors_pins)):
-           wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
-           wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
-           wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
+            wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
+            wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
+            wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
 
     def SetWheel(self, left, right):
         self.m_LeftWheel = left
@@ -112,24 +120,24 @@ class Robot:
 
         self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
 
-        #prosto lewy
-        #self.m_DistFront
+        # prosto lewy
+        # self.m_DistFront
         self.m_DistFrontLeft = self.UsonicReadCM(
             echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7
 
         # teraz to jest prawy
-        #self.m_DistLeft
+        # self.m_DistLeft
         self.m_DistRight = self.UsonicReadCM(
             echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75
 
         # prosto prawy
-        #self.m_DistBack
+        # self.m_DistBack
         self.m_DistFrontRight = self.UsonicReadCM(
             echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7
 
         # terato to jest lewy
-        #self.m_DistRight
-        self.m_DistRight = self.UsonicReadCM(
+        # self.m_DistRight
+        self.m_DistLeft = self.UsonicReadCM(
             echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75
 
         self.m_DistFront = self.UsonicReadCM(
@@ -196,35 +204,61 @@ class Robot:
         state.sysTimestamp = time.time()
 
     def SetMove(self, l, r, save_direction):
-        wiringpi.softPwmWrite(AENBL,abs(l))
-        wiringpi.softPwmWrite(BENBL,abs(r))
+        wiringpi.softPwmWrite(AENBL, abs(l))
+        wiringpi.softPwmWrite(BENBL, abs(r))
         lphase = 0
         rphase = 0
         if not save_direction:
             if l >= 0:
-               lphase = 0
+                lphase = 0
             else:
-               lphase = 1
+                lphase = 1
             if r >= 0:
-               rphase = 0
+                rphase = 0
             else:
-               rphase = 1
+                rphase = 1
 
         wiringpi.digitalWrite(APHASE, lphase)
         wiringpi.digitalWrite(BPHASE, rphase)
 
     def CheckTimeout(self, start_us, timeout_us):
-       res = 0
-       curr_us = micros()
-       if curr_us <= start_us:
-          if curr_us + 0xFFFFFFFF - start_us >= timeout_us:
-             res = 1
-          else:
-             res = 0
-       else:
-          if curr_us - start_us >= timeout_us:
-             res = 1
-          else:
-             res = 0
+        res = 0
+        curr_us = micros()
+        if curr_us <= start_us:
+            if curr_us + 0xFFFFFFFF - start_us >= timeout_us:
+                res = 1
+            else:
+                res = 0
+        else:
+            if curr_us - start_us >= timeout_us:
+                res = 1
+            else:
+                res = 0
 
-       return res
+        return res
+
+    def Braitenberg(self):
+        #         left    front-left, front, front-right, right
+
+        self.Cycle()
+
+        prox_sensors = [self.m_DistLeft, self.m_DistFrontLeft,
+                        self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]
+
+        sensors = [clamp(i, -40, 40) for i in prox_sensors]
+        wl = [4, 4, 5, -4, -4]
+        wr = [-5, -15, 5, 15, 5]
+
+        b = 4
+        rightWheel = 0
+        leftWheel = 0
+
+        for i in range(len(prox_sensors)):
+            leftWheel += wl[i]*sensors[i] + b
+            rightWheel += wr[i]*sensors[i] + b
+
+        leftWheel = clamp(leftWheel, -40, 40)
+        rightWheel = clamp(rightWheel, -40, 40)
+
+        print(sensors)
+        print([leftWheel, rightWheel])

@@ -65,12 +65,12 @@ def main():
     kb = 0
     lastKb = 0
 
-    print("Waiting for Matlab to cennect...")
-    sock.bind((TCP_IP, TCP_PORT))
-    sock.listen(1)
+   #  print("Waiting for Matlab to cennect...")
+   #  sock.bind((TCP_IP, TCP_PORT))
+   #  sock.listen(1)
 
-    conn, addr = sock.accept()
-    print("Matlab connected! Address" + str(addr))
+   #  conn, addr = sock.accept()
+   #  print("Matlab connected! Address" + str(addr))
 
     shaggy = robot.Robot()
     robotState = robot.RobotState()
@@ -94,6 +94,12 @@ def main():
           print("'e' insertet!")
           Wysylanie(conn, robotState)
 
+          #shaggy.SetWheel(pred_lew,pred_praw)
+          shaggy.Cycle()
+
+       if lastKb == 'b':
+          #print("Braitenberg")
+          shaggy.Braitenberg()
           #shaggy.SetWheel(pred_lew,pred_praw)
           shaggy.Cycle()
 
