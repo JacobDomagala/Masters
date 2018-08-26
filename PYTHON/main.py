@@ -20,9 +20,10 @@ def robot_info():
 
 
 def print_main_menu():
-    print("Wybierz:\r\n")
-    print("w - omijanie przeszkod Fuzzy\r\n")
-    print("h - informacje o robocie\r\n")
+    print("Wybierz:\n")
+    print("w - omijanie przeszkod Fuzzy\n")
+    print("b - omijanie przeszkod Braitenberg\n")
+    print("h - informacje o robocie\n")
 
 TCP_IP = "10.42.0.249"
 TCP_PORT = 5006
