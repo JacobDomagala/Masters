@@ -245,9 +245,9 @@ class Robot:
         prox_sensors = [self.m_DistLeft, self.m_DistFrontLeft,
                         self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]
 
-        sensors = [clamp(i, -40, 40) for i in prox_sensors]
-        wl = [4, 4, 5, -4, -4]
-        wr = [-5, -15, 5, 15, 5]
+        sensors = [min(i, 40)/40 for i in prox_sensors]
+        wl = [4, 4, -15, -4, -4]
+        wr = [-5, -15, -15, 15, 5]
 
         b = 4
         rightWheel = 0
