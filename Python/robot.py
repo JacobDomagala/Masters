@@ -166,10 +166,10 @@ class Robot:
                         self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]
 
         sensors = [1-(min(i, 40)/40) for i in prox_sensors]
-        wl = [4, 4, -15, -4, -4]
-        wr = [-5, -15, -15, 15, 5]
+        wl = [4, 4, 50, -15, -5]
+        wr = [-5, -15, -50, 4, 4]
 
-        b = 8
+        b = 4
         rightWheel = 0
         leftWheel = 0
 
@@ -177,8 +177,8 @@ class Robot:
             leftWheel += wl[i]*sensors[i] + b
             rightWheel += wr[i]*sensors[i] + b
 
-        leftWheel = clamp(leftWheel, -40, 40)
-        rightWheel = clamp(rightWheel, -40, 40)
+        leftWheel = clamp(10*leftWheel, -40, 40)
+        rightWheel = clamp(10*rightWheel, -40, 40)
 
         print(sensors)
         print([leftWheel, rightWheel])
