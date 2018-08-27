@@ -1,8 +1,7 @@
 import wiringpi
-import time
-
-millis = lambda: int(round(time.time() * 1000))
-micros = lambda: int(round(time.time() * 1000000))
+import socket
+import json
+from utils import *
 
 BIN2 = 0
 BIN1 = 1
@@ -18,49 +17,12 @@ APHASE = AIN1
 GY80_AINT_1 = 5
 GY80_M_DRDY = 7
 
-echo_sensors_pins = [[21,22], [26,23], [27,24], [28,29], [11,25]]
+echo_sensors_pins = [[21, 22], [26, 23], [27, 24], [28, 29], [11, 25]]
 
-class RobotState:
-    def __init__(self):
-        # acceletations in 3 dimensions xyz [m/s2]
-        self.ax = 0.0
-        self.ay = 0.0
-        self.az = 0.0
-
-        # flat orientation angle 0 - 360 deg [degreese]
-        self.angle = 0.0
-
-        # distances from Ultra Sonic sensors, [cm]
-        self.distLeft = 0.0
-        self.distRight = 0.0
-        self.distFrontLeft = 0.0
-        self.distFrontRight = 0.0
-        self.distFront = 0.0
-
-        # PWM power set to wheels, 0 - 100 [%]
-        self.wheelRightPWM = 0
-        self.wheelLeftPWM = 0
-
-        # real cycle time [ms]
-        self.cycleMillis = 0
-
-        # cycle number
-        self.cycleNumber = 0
-
-        # timestamp in microseconds, approximately wrap after 71 minutes [us]
-        self.microsTimestamp = 0
-
-        # timestamp in milliseconds, wrap after 49 days [ms]
-        self.millisTimestamp = 0
-
-        # system timestamp in seconds [s]
-        self.sysTimestamp = 0
-
+UPPER_BOUND = 40
 
 class Robot:
     def __init__(self):
-        self.m_LogFilename = ""
-        self.m_LogStream = ""
         self.m_LeftWheel = 0
         self.m_RightWheel = 0
         self.m_CycleMillis = 0
@@ -71,12 +33,11 @@ class Robot:
         self.m_DistFrontRight = 0.0
         self.m_DistFront = 0.0
 
-        self.m_AccelX = 0.0
-        self.m_AccelY = 0.0
-        self.m_AccelZ = 0.0
-        self.m_Angle = 0.0
-        self.m_SilenceInit = True
         self.m_CycleNumber = 0
+
+        self.m_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.m_Conn = 0
+        self.m_Addr = 0
 
         # Init_RPI()
         wiringpi.wiringPiSetup()
@@ -99,41 +60,29 @@ class Robot:
 
         # Init_Usonic()
         for i in range(len(echo_sensors_pins)):
-           wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
-           wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
-           wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
-
-    def SetWheel(self, left, right):
-        self.m_LeftWheel = left
-        self.m_RightWheel = right
+            wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
+            wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
+            wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
 
     def Cycle(self):
         self.m_CycleNumber += 1
 
         self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
 
-        #prosto lewy
-        #self.m_DistFront
-        self.m_DistFrontLeft = self.UsonicReadCM(
-            echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7
+        self.m_DistFrontLeft = int(min(self.UsonicReadCM(
+            echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7), UPPER_BOUND)
 
-        # teraz to jest prawy
-        #self.m_DistLeft
-        self.m_DistRight = self.UsonicReadCM(
-            echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75
+        self.m_DistRight = int(min(self.UsonicReadCM(
+            echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75), UPPER_BOUND)
 
-        # prosto prawy
-        #self.m_DistBack
-        self.m_DistFrontRight = self.UsonicReadCM(
-            echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7
+        self.m_DistFrontRight = int(min(self.UsonicReadCM(
+            echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7), UPPER_BOUND)
 
-        # terato to jest lewy
-        #self.m_DistRight
-        self.m_DistRight = self.UsonicReadCM(
-            echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75
+        self.m_DistLeft = int(min(self.UsonicReadCM(
+            echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75), UPPER_BOUND)
 
-        self.m_DistFront = self.UsonicReadCM(
-            echo_sensors_pins[4][0], echo_sensors_pins[4][1]) + 8
+        self.m_DistFront = int(min(self.UsonicReadCM(
+            echo_sensors_pins[4][0], echo_sensors_pins[4][1]) + 8), UPPER_BOUND)
 
         self.m_CycleMillis = millis
 
@@ -176,55 +125,94 @@ class Robot:
 
         return distance
 
-    def GetState(self, state):
-        state.ax = self.m_AccelX
-        state.ay = self.m_AccelY
-        state.angle = self.m_Angle
-
-        state.distLeft = self.m_DistLeft
-        state.distRight = self.m_DistRight
-        state.distFrontLeft = self.m_DistFrontLeft
-        state.distFrontRight = self.m_DistFrontRight
-        state.distFront = self.m_DistFront
-
-        state.cycleMillis = self.m_CycleMillis
-        state.wheelLeftPWM = self.m_LeftWheel
-        state.wheelRightPWM = self.m_RightWheel
-        state.cycleNumber = self.m_CycleNumber
-        state.microsTimestamp = micros()
-        state.millisTimestamp = millis()
-        state.sysTimestamp = time.time()
-
     def SetMove(self, l, r, save_direction):
-        wiringpi.softPwmWrite(AENBL,abs(l))
-        wiringpi.softPwmWrite(BENBL,abs(r))
+        wiringpi.softPwmWrite(AENBL, abs(l))
+        wiringpi.softPwmWrite(BENBL, abs(r))
         lphase = 0
         rphase = 0
         if not save_direction:
             if l >= 0:
-               lphase = 0
+                lphase = 0
             else:
-               lphase = 1
+                lphase = 1
             if r >= 0:
-               rphase = 0
+                rphase = 0
             else:
-               rphase = 1
+                rphase = 1
 
         wiringpi.digitalWrite(APHASE, lphase)
         wiringpi.digitalWrite(BPHASE, rphase)
 
     def CheckTimeout(self, start_us, timeout_us):
-       res = 0
-       curr_us = micros()
-       if curr_us <= start_us:
-          if curr_us + 0xFFFFFFFF - start_us >= timeout_us:
-             res = 1
-          else:
-             res = 0
-       else:
-          if curr_us - start_us >= timeout_us:
-             res = 1
-          else:
-             res = 0
+        res = 0
+        curr_us = micros()
+        if curr_us <= start_us:
+            if curr_us + 0xFFFFFFFF - start_us >= timeout_us:
+                res = 1
+            else:
+                res = 0
+        else:
+            if curr_us - start_us >= timeout_us:
+                res = 1
+            else:
+                res = 0
 
-       return res
+        return res
+
+    def Braitenberg(self):
+        self.Cycle()
+
+        prox_sensors = [self.m_DistLeft, self.m_DistFrontLeft,
+                        self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]
+
+        sensors = [1-(min(i, 40)/40) for i in prox_sensors]
+        wl = [4, 4, -15, -4, -4]
+        wr = [-5, -15, -15, 15, 5]
+
+        b = 8
+        rightWheel = 0
+        leftWheel = 0
+
+        for i in range(len(sensors)):
+            leftWheel += wl[i]*sensors[i] + b
+            rightWheel += wr[i]*sensors[i] + b
+
+        leftWheel = clamp(leftWheel, -40, 40)
+        rightWheel = clamp(rightWheel, -40, 40)
+
+        print(sensors)
+        print([leftWheel, rightWheel])
+
+    def Fuzzy(self):
+        print("Fuzzy() start")
+
+        self.Cycle()
+
+        bytesSent = self.m_Conn.send(json.dumps(
+            [self.m_DistLeft, self.m_DistFrontLeft, self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]).encode())
+
+        print(str(bytesSent) + " bytes sent to Matlab")
+        rawData = self.m_Conn.recv(8).decode()
+        print("Raw data: " + str(rawData))
+        decodedData = json.loads(rawData)
+        print("After json.loads: " + str(decodedData))
+
+        pred_lew = decodedData[0]
+        pred_praw = decodedData[1]
+
+        print("Lewa: " + str(pred_lew))
+        print("Prawa: " + str(pred_praw))
+
+        print("Fuzzy() end")
+
+    def ConnectTo(self, Address):
+        print("Waiting for Matlab to cennect...")
+        self.m_Socket.bind(Address)
+        self.m_Socket.listen(1)
+
+        self.m_Conn, self.m_Addr = self.m_Socket.accept()
+        print("Matlab connected! Address" + str(self.m_Addr))
+
+    def Stop(self):
+        self.SetMove(0, 0, 0)
+        self.m_Socket.close()

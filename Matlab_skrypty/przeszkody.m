@@ -1,30 +1,31 @@
-K=readfis('robot');
+% create TCP socket
+raspi = tcpip('10.42.0.249', 5006)
+
+% Matlab will wait maximum of 0.1 sec to receive TCP packet
+raspi.timeout = 0.1
+
+% connect to Raspberry
+fopen(raspi);
+
+% open fuzzy logic 
+fuzzy = readfis('Robot');
+
 while 1
-y = fread(lewa_cz,6);
-x = fread(srod_cz,6);
-g = fread(prawy_cz,6);
-left = str2num(string(transpose(y)));
-front = str2num(string(transpose(x)));
-right = str2num(string(transpose(g)));
-z = evalfis([left, front, right], K);
+    rawData = fread(obj, 48, 'uchar');
+    
+    if isempty(rawData)
+        %no data was received
+    else
+        decodedData = jsondecode(transpose(native2unicode(rawData)))
 
-if (z(1) > 0) && (z(2) > 0)
-     w = '30';
-     h = '30';
-end
+        left = str2num(string(decodedData(1)))
+        frontLeft = str2num(string(decodedData(2)))
+        front = str2num(string(decodedData(3)))
+        frontRight = str2num(string(decodedData(4)))
+        right = str2num(string(decodedData(5)))
+        
+        z = evalfis([left, frontLeft, front, frontRight, right], fuzzy);
 
-if (z(1) < z(2)) 
-     w = '-30';
-     h = '30';
-end
-
-if (z(1) > z(2))
-     w = '30';
-     h = '-30';
-end
-
-%L = num2str(w);
-%P = num2str(h);
-fwrite(pred,w);
-fwrite(pred,h);
+        fwrite(obj, jsonencode({w;h}));
+    end
 end
