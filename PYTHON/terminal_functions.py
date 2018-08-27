@@ -33,3 +33,6 @@ def kbhit():
     dr,dw,de = select([sys.stdin], [], [], 0)
     return not (dr == [])
 
+def init():
+    atexit.register(set_normal_term)
+    set_curses_term()
