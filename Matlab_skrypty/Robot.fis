@@ -1,0 +1,95 @@
+[System]
+Name='Robot'
+Type='mamdani'
+Version=2.0
+NumInputs=5
+NumOutputs=2
+NumRules=32
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='left'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[0 0 20]
+MF2='big':'trimf',[20 40 40]
+
+[Input2]
+Name='frontLeft'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[0 0 20]
+MF2='big':'trimf',[20 40 40]
+
+[Input3]
+Name='front'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[0 0 20]
+MF2='big':'trimf',[20 40 40]
+
+[Input4]
+Name='frontRight'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[0 0 20]
+MF2='big':'trimf',[20 40 40]
+
+[Input5]
+Name='right'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[0 0 20]
+MF2='big':'trimf',[20 40 40]
+
+[Output1]
+Name='left'
+Range=[-40 40]
+NumMFs=2
+MF1='back':'trimf',[-40 -40 0]
+MF2='front':'trimf',[0 40 40]
+
+[Output2]
+Name='right'
+Range=[-40 40]
+NumMFs=2
+MF1='back':'trimf',[-40 -40 0]
+MF2='front':'trimf',[0 40 40]
+
+[Rules]
+1 1 1 1 1, 1 2 (1) : 1
+1 1 1 1 2, 2 1 (1) : 1
+1 1 1 2 1, 2 1 (1) : 1
+1 1 2 1 1, 2 1 (1) : 1
+1 2 1 1 1, 2 1 (1) : 1
+2 1 1 1 1, 1 2 (1) : 1
+1 1 1 2 2, 2 1 (1) : 1
+1 1 2 1 2, 2 1 (1) : 1
+1 2 1 1 2, 2 1 (1) : 1
+2 1 1 1 2, 2 1 (1) : 1
+1 1 2 2 2, 2 1 (1) : 1
+1 2 1 2 2, 2 1 (1) : 1
+2 1 1 2 2, 2 1 (1) : 1
+1 2 2 2 2, 2 2 (1) : 1
+2 1 2 2 2, 2 1 (1) : 1
+2 2 2 2 2, 2 2 (1) : 1
+2 2 2 2 1, 2 2 (1) : 1
+2 2 2 1 2, 1 2 (1) : 1
+2 2 2 1 1, 1 2 (1) : 1
+2 2 1 1 2, 1 2 (1) : 1
+2 2 1 2 1, 1 2 (1) : 1
+2 2 1 1 1, 1 2 (1) : 1
+2 1 2 1 1, 1 2 (1) : 1
+2 1 1 2 1, 1 2 (1) : 1
+1 2 2 2 1, 2 2 (1) : 1
+1 1 2 2 1, 2 1 (1) : 1
+1 2 2 1 1, 1 2 (1) : 1
+1 2 1 2 1, 2 1 (1) : 1
+2 2 1 2 2, 2 1 (1) : 1
+2 1 2 1 2, 2 1 (1) : 1
+2 1 2 2 1, 2 1 (1) : 1
+1 2 2 1 2, 1 2 (1) : 1
