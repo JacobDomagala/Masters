@@ -38,6 +38,7 @@ class Robot:
         self.m_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.m_Conn = 0
         self.m_Addr = 0
+        self.bound = False
 
         # Init_RPI()
         wiringpi.wiringPiSetup()
@@ -205,13 +206,17 @@ class Robot:
 
         print("Fuzzy() end")
 
-    def ConnectTo(self, Address):
-        print("Waiting for Matlab to cennect...")
-        self.m_Socket.bind(Address)
-        self.m_Socket.listen(1)
+    def ConnectTo(self, IP, Port):
+        if not self.bound:
+            print("Waiting for Matlab to cennect...")
+            self.m_Socket.bind((IP, Port))
+            self.m_Socket.listen(1)
 
-        self.m_Conn, self.m_Addr = self.m_Socket.accept()
-        print("Matlab connected! Address" + str(self.m_Addr))
+            self.m_Conn, self.m_Addr = self.m_Socket.accept()
+            print("Matlab connected! Address" + str(self.m_Addr))
+            self.bound = True
+        else:
+            print("Socket already bound!")
 
     def Stop(self):
         self.SetMove(0, 0, 0)

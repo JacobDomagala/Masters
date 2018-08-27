@@ -34,7 +34,7 @@ def main():
 
        lastKey = key
        if lastKey == 'c':
-          shaggy.ConnectTo(("10.42.0.249", 5006))
+          shaggy.ConnectTo("10.42.0.249", 5006)
 
        if lastKey == 'f':
           shaggy.Fuzzy()
