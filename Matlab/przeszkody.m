@@ -1,17 +1,17 @@
 % create TCP socket
 raspi = tcpip('10.42.0.249', 5006)
 
-% Matlab will wait maximum of 0.1 sec to receive TCP packet
-raspi.timeout = 0.1
+% Matlab will wait maximum of 0.05 sec to receive TCP packet
+raspi.timeout = 0.05
 
 % connect to Raspberry
 fopen(raspi);
 
 % open fuzzy logic 
-fuzzy = readfis('Robot');
+fuzzy = readfis('przeszkody');
 
 while 1
-    rawData = fread(obj, 48, 'uchar');
+    rawData = fread(raspi, 12, 'uchar');
     
     if isempty(rawData)
         %no data was received
@@ -19,13 +19,43 @@ while 1
         decodedData = jsondecode(transpose(native2unicode(rawData)))
 
         left = str2num(string(decodedData(1)))
-        frontLeft = str2num(string(decodedData(2)))
-        front = str2num(string(decodedData(3)))
-        frontRight = str2num(string(decodedData(4)))
-        right = str2num(string(decodedData(5)))
+        front = str2num(string(decodedData(2)))
+        right = str2num(string(decodedData(3)))
         
-        z = evalfis([left, frontLeft, front, frontRight, right], fuzzy);
+        result = evalfis([left, front, right], fuzzy);
 
-        fwrite(obj, jsonencode({w;h}));
+        leftWheel = fix(result(1))
+        rightWheel = fix(result(2))
+        
+        if leftWheel > 0 && leftWheel < 40
+            leftWheel = 50
+        elseif leftWheel < 0 && leftWheel > -40
+            leftWheel = -50
+        end
+        
+        if rightWheel > 0 && rightWheel < 40
+            rightWheel = 50
+        elseif rightWheel < 0 && rightWheel > -40
+            rightWheel = -50
+        end
+%         leftWheel = result(1)
+%         rightWheel = result(2)
+        
+%         if (result(1) > 0) && (result(2) > 0)
+%             leftWheel = 40;
+%             rightWheel = 40;
+%         end
+%         
+%         if (result(1) < result(2)) 
+%             leftWheel = -40;
+%             rightWheel = 40;
+%         end
+%         
+%         if(result(1) > result(2))
+%             leftWheel = 40;
+%             rightWheel = -40;
+%         end
+        
+        fwrite(raspi, jsonencode({leftWheel;rightWheel}));
     end
 end

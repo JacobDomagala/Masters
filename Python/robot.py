@@ -19,7 +19,7 @@ GY80_M_DRDY = 7
 
 echo_sensors_pins = [[21, 22], [26, 23], [27, 24], [28, 29], [11, 25]]
 
-UPPER_BOUND = 40
+UPPER_BOUND = 50
 
 class Robot:
     def __init__(self):
@@ -70,20 +70,35 @@ class Robot:
 
         self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
 
-        self.m_DistFrontLeft = int(min(self.UsonicReadCM(
-            echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7), UPPER_BOUND)
+      #   self.m_DistFrontLeft = int(min(self.UsonicReadCM(
+      #       echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7, UPPER_BOUND))
 
-        self.m_DistRight = int(min(self.UsonicReadCM(
-            echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75), UPPER_BOUND)
+      #   self.m_DistRight = int(min(self.UsonicReadCM(
+      #       echo_sensors_pins[2][0], echo_sensors_pins[2][1]) + 5.75, UPPER_BOUND))
 
-        self.m_DistFrontRight = int(min(self.UsonicReadCM(
-            echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7), UPPER_BOUND)
+      #   self.m_DistFrontRight = int(min(self.UsonicReadCM(
+      #       echo_sensors_pins[1][0], echo_sensors_pins[1][1]) + 7.7, UPPER_BOUND))
 
-        self.m_DistLeft = int(min(self.UsonicReadCM(
-            echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75), UPPER_BOUND)
+      #   self.m_DistLeft = int(min(self.UsonicReadCM(
+      #       echo_sensors_pins[3][0], echo_sensors_pins[3][1]) + 5.75, UPPER_BOUND))
 
-        self.m_DistFront = int(min(self.UsonicReadCM(
-            echo_sensors_pins[4][0], echo_sensors_pins[4][1]) + 8), UPPER_BOUND)
+      #   self.m_DistFront = int(min(self.UsonicReadCM(
+      #       echo_sensors_pins[4][0], echo_sensors_pins[4][1]) + 8, UPPER_BOUND))
+
+        self.m_DistFrontLeft = self.UsonicReadCM(
+            echo_sensors_pins[0][0], echo_sensors_pins[0][1])
+
+        self.m_DistRight = self.UsonicReadCM(
+            echo_sensors_pins[2][0], echo_sensors_pins[2][1])
+
+        self.m_DistFrontRight = self.UsonicReadCM(
+            echo_sensors_pins[1][0], echo_sensors_pins[1][1])
+
+        self.m_DistLeft = self.UsonicReadCM(
+            echo_sensors_pins[3][0], echo_sensors_pins[3][1])
+
+        self.m_DistFront = self.UsonicReadCM(
+            echo_sensors_pins[4][0], echo_sensors_pins[4][1])
 
         self.m_CycleMillis = millis
 
@@ -178,31 +193,36 @@ class Robot:
             leftWheel += wl[i]*sensors[i] + b
             rightWheel += wr[i]*sensors[i] + b
 
-        leftWheel = clamp(10*leftWheel, -40, 40)
-        rightWheel = clamp(10*rightWheel, -40, 40)
+        self.m_LeftWheel = int(-(clamp(10*leftWheel, -UPPER_BOUND, UPPER_BOUND)))
+        self.m_RightWheel = int(-(clamp(10*rightWheel, -UPPER_BOUND, UPPER_BOUND)))
+        self.Cycle()
 
         print(sensors)
-        print([leftWheel, rightWheel])
+        print([self.m_LeftWheel, self.m_RightWheel])
 
     def Fuzzy(self):
         print("Fuzzy() start")
 
         self.Cycle()
 
-        bytesSent = self.m_Conn.send(json.dumps(
-            [self.m_DistLeft, self.m_DistFrontLeft, self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]).encode())
 
+        sensors = [self.m_DistLeft, min(min(self.m_DistFrontLeft, self.m_DistFront), self.m_DistFrontRight), self.m_DistRight]
+        intSensors = [int(max(min(i, 40), 10)) for i in sensors]
+        bytesSent = self.m_Conn.send(json.dumps(intSensors).encode())
+
+        print(json.dumps(intSensors))
         print(str(bytesSent) + " bytes sent to Matlab")
-        rawData = self.m_Conn.recv(8).decode()
+        rawData = self.m_Conn.recv(20).decode()
         print("Raw data: " + str(rawData))
         decodedData = json.loads(rawData)
         print("After json.loads: " + str(decodedData))
 
-        pred_lew = decodedData[0]
-        pred_praw = decodedData[1]
+        self.m_LeftWheel = -(clamp(decodedData[0], -UPPER_BOUND, UPPER_BOUND))
+        self.m_RightWheel = -(clamp(decodedData[1], -UPPER_BOUND, UPPER_BOUND))
 
-        print("Lewa: " + str(pred_lew))
-        print("Prawa: " + str(pred_praw))
+        print(intSensors)
+        print([self.m_LeftWheel, self.m_RightWheel])
+        self.Cycle()
 
         print("Fuzzy() end")
 

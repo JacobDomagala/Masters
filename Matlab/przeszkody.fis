@@ -1,0 +1,57 @@
+[System]
+Name='przeszkody'
+Type='sugeno'
+Version=2.0
+NumInputs=3
+NumOutputs=2
+NumRules=8
+AndMethod='prod'
+OrMethod='probor'
+ImpMethod='prod'
+AggMethod='sum'
+DefuzzMethod='wtaver'
+
+[Input1]
+Name='left'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[-40 5.556e-16 40]
+MF2='big':'trimf',[0 40 80]
+
+[Input2]
+Name='front'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[-40 5.556e-16 40]
+MF2='big':'trimf',[0 40 80]
+
+[Input3]
+Name='right'
+Range=[0 40]
+NumMFs=2
+MF1='small':'trimf',[-40 5.556e-16 40]
+MF2='big':'trimf',[0 40 80]
+
+[Output1]
+Name='v_left'
+Range=[0 1]
+NumMFs=2
+MF1='front':'constant',[80]
+MF2='back':'constant',[-80]
+
+[Output2]
+Name='v_right'
+Range=[0 1]
+NumMFs=2
+MF1='front':'constant',[80]
+MF2='back':'constant',[-80]
+
+[Rules]
+1 1 1, 2 1 (1) : 1
+1 1 2, 1 2 (1) : 1
+1 2 1, 1 1 (1) : 1
+1 2 2, 1 1 (1) : 1
+2 1 1, 2 1 (1) : 1
+2 1 2, 2 1 (1) : 1
+2 2 1, 1 1 (1) : 1
+2 2 2, 1 1 (1) : 1

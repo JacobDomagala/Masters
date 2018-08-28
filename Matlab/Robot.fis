@@ -15,36 +15,36 @@ DefuzzMethod='centroid'
 Name='left'
 Range=[0 40]
 NumMFs=2
-MF1='small':'trimf',[0 0 20]
-MF2='big':'trimf',[20 40 40]
+MF1='small':'trimf',[0 0 40]
+MF2='big':'trimf',[0 40 40]
 
 [Input2]
 Name='frontLeft'
 Range=[0 40]
 NumMFs=2
-MF1='small':'trimf',[0 0 20]
-MF2='big':'trimf',[20 40 40]
+MF1='small':'trimf',[0 0 40]
+MF2='big':'trimf',[0 40 40]
 
 [Input3]
 Name='front'
 Range=[0 40]
 NumMFs=2
-MF1='small':'trimf',[0 0 20]
-MF2='big':'trimf',[20 40 40]
+MF1='small':'trimf',[0 0 40]
+MF2='big':'trimf',[0 40 40]
 
 [Input4]
 Name='frontRight'
 Range=[0 40]
 NumMFs=2
-MF1='small':'trimf',[0 0 20]
-MF2='big':'trimf',[20 40 40]
+MF1='small':'trimf',[0 0 40]
+MF2='big':'trimf',[0 40 40]
 
 [Input5]
 Name='right'
 Range=[0 40]
 NumMFs=2
-MF1='small':'trimf',[0 0 20]
-MF2='big':'trimf',[20 40 40]
+MF1='small':'trimf',[0 0 40]
+MF2='big':'trimf',[0 40 40]
 
 [Output1]
 Name='left'
@@ -65,7 +65,7 @@ MF2='front':'trimf',[0 40 40]
 1 1 1 1 2, 2 1 (1) : 1
 1 1 1 2 1, 2 1 (1) : 1
 1 1 2 1 1, 2 1 (1) : 1
-1 2 1 1 1, 2 1 (1) : 1
+1 2 1 1 1, 1 2 (1) : 1
 2 1 1 1 1, 1 2 (1) : 1
 1 1 1 2 2, 2 1 (1) : 1
 1 1 2 1 2, 2 1 (1) : 1
@@ -89,7 +89,7 @@ MF2='front':'trimf',[0 40 40]
 1 1 2 2 1, 2 1 (1) : 1
 1 2 2 1 1, 1 2 (1) : 1
 1 2 1 2 1, 2 1 (1) : 1
-2 2 1 2 2, 2 1 (1) : 1
-2 1 2 1 2, 2 1 (1) : 1
-2 1 2 2 1, 2 1 (1) : 1
+2 2 1 2 2, 1 2 (1) : 1
+2 1 2 1 2, 1 2 (1) : 1
+2 1 2 2 1, 1 2 (1) : 1
 1 2 2 1 2, 1 2 (1) : 1
