@@ -35,6 +35,7 @@ class Robot:
 
         self.m_CycleNumber = 0
 
+        socket.setdefaulttimeout(1.0)
         self.m_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.m_Conn = 0
         self.m_Addr = 0
@@ -107,25 +108,22 @@ class Robot:
 
     def UsonicReadCM(self, trig, echo):
         wiringpi.digitalWrite(trig, wiringpi.HIGH)
-        self.delayMicroseconds(100)
+        self.delayMicroseconds(10)
         wiringpi.digitalWrite(trig, wiringpi.LOW)
 
-        startTime = getTime()
-        stopTime = getTime()
+        startTime = micros()
+        stopTime = micros()
 
         while wiringpi.digitalRead(echo) == wiringpi.LOW:
-           startTime = getTime()
+           startTime = micros()
 
         while wiringpi.digitalRead(echo) == wiringpi.HIGH:
-           stopTime = getTime()
+           stopTime = micros()
 
         travelTime = stopTime - startTime
 
-        # multiply with the sonic speed (34300 cm/s)
-        # and divide by 2, because there and back
-        distance = (travelTime * 34300) / 2
-
-        return distance
+        # divide by 58.0 to get centimeters
+        return travelTime / 58.0        
 
     def SetMove(self, l, r, save_direction):
         wiringpi.softPwmWrite(AENBL, abs(l))
@@ -181,36 +179,35 @@ class Robot:
         self.m_LeftWheel = int(-(clamp(10*leftWheel, -UPPER_BOUND, UPPER_BOUND)))
         self.m_RightWheel = int(-(clamp(10*rightWheel, -UPPER_BOUND, UPPER_BOUND)))
         self.AdjustSpeed()
-        self.Cycle()
 
         print(sensors)
         print([self.m_LeftWheel, self.m_RightWheel])
 
     def Fuzzy(self):
-        print("Fuzzy() start")
-
         self.Cycle()
 
-
         sensors = [self.m_DistLeft, min(min(self.m_DistFrontLeft, self.m_DistFront), self.m_DistFrontRight), self.m_DistRight]
-        intSensors = [int(max(min(i, 40), 10)) for i in sensors]
+        intSensors = [int(clamp(i, 10, 40)) for i in sensors]
         bytesSent = self.m_Conn.send(json.dumps(intSensors).encode())
 
         print(json.dumps(intSensors))
         print(str(bytesSent) + " bytes sent to Matlab")
-        rawData = self.m_Conn.recv(20).decode()
-        print("Raw data: " + str(rawData))
-        decodedData = json.loads(rawData)
-        print("After json.loads: " + str(decodedData))
 
-        self.m_LeftWheel = -(clamp(decodedData[0], -UPPER_BOUND, UPPER_BOUND))
-        self.m_RightWheel = -(clamp(decodedData[1], -UPPER_BOUND, UPPER_BOUND))
+        rawData = self.m_Conn.recv(20).decode()
+
+        if len(rawData) == 0:
+            self.m_LeftWheel = 0 
+            self.m_RightWheel = 0
+        else:     
+            #print("Raw data: " + str(rawData))
+            decodedData = json.loads(rawData)
+            #print("After json.loads: " + str(decodedData))
+
+            self.m_LeftWheel = -(clamp(decodedData[0], -UPPER_BOUND, UPPER_BOUND))
+            self.m_RightWheel = -(clamp(decodedData[1], -UPPER_BOUND, UPPER_BOUND))
 
         print(intSensors)
         print([self.m_LeftWheel, self.m_RightWheel])
-        self.Cycle()
-
-        print("Fuzzy() end")
 
     def ConnectTo(self, IP, Port):
         if not self.bound:
@@ -221,8 +218,6 @@ class Robot:
             self.m_Conn, self.m_Addr = self.m_Socket.accept()
             print("Matlab connected! Address" + str(self.m_Addr))
             self.bound = True
-        else:
-            print("Socket already bound!")
 
     def Stop(self):
         self.SetMove(0, 0, 0)
