@@ -8,3 +8,6 @@ def millis():
 
 def micros():
     return int(round(time.time() * 1000000))
+
+def getTime():
+   return time.time()

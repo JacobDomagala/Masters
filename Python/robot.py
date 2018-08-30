@@ -68,7 +68,7 @@ class Robot:
     def Cycle(self):
         self.m_CycleNumber += 1
 
-        self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
+        #self.SetMove(self.m_LeftWheel, self.m_RightWheel, 0)
 
       #   self.m_DistFrontLeft = int(min(self.UsonicReadCM(
       #       echo_sensors_pins[0][0], echo_sensors_pins[0][1]) + 7.7, UPPER_BOUND))
@@ -107,37 +107,23 @@ class Robot:
 
     def UsonicReadCM(self, trig, echo):
         wiringpi.digitalWrite(trig, wiringpi.HIGH)
-        self.delayMicroseconds(10)
+        self.delayMicroseconds(100)
         wiringpi.digitalWrite(trig, wiringpi.LOW)
-        self.delayMicroseconds(240)
 
-        timeout = micros()
-        tim = 0
+        startTime = getTime()
+        stopTime = getTime()
 
-        while wiringpi.digitalRead(echo) == wiringpi.LOW and not tim:
-            tim = self.CheckTimeout(timeout, 3000)
+        while wiringpi.digitalRead(echo) == wiringpi.LOW:
+           startTime = getTime()
 
-        if tim:
-            self.delayMicroseconds(100)
-            return 0
+        while wiringpi.digitalRead(echo) == wiringpi.HIGH:
+           stopTime = getTime()
 
-        startTime = micros()
-        tim = 0
+        travelTime = stopTime - startTime
 
-        self.delayMicroseconds(60)
-
-        while wiringpi.digitalRead(echo) == wiringpi.HIGH and not tim:
-            tim = self.CheckTimeout(startTime, 7000)
-
-        if tim:
-            self.delayMicroseconds(10)
-            return 120
-
-        travelTime = micros() - startTime
-
-        distance = travelTime / 58.0
-
-        self.delayMicroseconds(10)
+        # multiply with the sonic speed (34300 cm/s)
+        # and divide by 2, because there and back
+        distance = (travelTime * 34300) / 2
 
         return distance
 
@@ -182,9 +168,8 @@ class Robot:
                         self.m_DistFront, self.m_DistFrontRight, self.m_DistRight]
 
         sensors = [1-(min(i, 40)/40) for i in prox_sensors]
-        wl = [4, 4, 50, -15, -5]
-        wr = [-5, -15, -50, 4, 4]
-
+        wl = [8, 10, 50, -30, -9]
+        wr = [-9, -30, -50, 10, 8]
         b = 4
         rightWheel = 0
         leftWheel = 0
@@ -195,6 +180,7 @@ class Robot:
 
         self.m_LeftWheel = int(-(clamp(10*leftWheel, -UPPER_BOUND, UPPER_BOUND)))
         self.m_RightWheel = int(-(clamp(10*rightWheel, -UPPER_BOUND, UPPER_BOUND)))
+        self.AdjustSpeed()
         self.Cycle()
 
         print(sensors)
@@ -241,3 +227,14 @@ class Robot:
     def Stop(self):
         self.SetMove(0, 0, 0)
         self.m_Socket.close()
+
+    def AdjustSpeed(self):
+       if self.m_LeftWheel > 0 and self.m_LeftWheel < 40:
+          self.m_LeftWheel = 40
+       if self.m_RightWheel > 0 and self.m_RightWheel < 40:
+          self.m_RightWheel = 40
+
+       if self.m_LeftWheel < 0 and self.m_LeftWheel > -40:
+          self.m_LeftWheel = -40
+       if self.m_RightWheel < 0 and self.m_RightWheel > -40:
+          self.m_RightWheel = -40
