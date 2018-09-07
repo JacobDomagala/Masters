@@ -35,7 +35,7 @@ def main():
           shaggy.Stop()
           break
 
-       time.sleep(0.1)
+       #time.sleep(0.05)
 
     print("QUIT")
 
