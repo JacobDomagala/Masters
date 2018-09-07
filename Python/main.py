@@ -32,10 +32,8 @@ def main():
           shaggy.Braitenberg()
 
        if lastKey == 's':
-          shaggy.Stop()
+          shaggy.ShutDown()
           break
-
-       #time.sleep(0.05)
 
     print("QUIT")
 

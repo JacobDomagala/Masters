@@ -2,6 +2,7 @@ import wiringpi
 import socket
 import json
 from utils import *
+import connection
 
 BIN2 = 0
 BIN1 = 1
@@ -25,7 +26,6 @@ class Robot:
     def __init__(self):
         self.m_LeftWheel = 0
         self.m_RightWheel = 0
-        self.m_CycleMillis = 0
 
         self.m_DistLeft = 0.0
         self.m_DistRight = 0.0
@@ -33,17 +33,12 @@ class Robot:
         self.m_DistFrontRight = 0.0
         self.m_DistFront = 0.0
 
-        self.m_CycleNumber = 0
+        self.m_TcpClient = connection.TcpClient()
 
-        self.m_Socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.m_Conn = 0
-        self.m_Addr = 0
-        self.bound = False
-
-        # Init_RPI()
+        # Init_RPI
         wiringpi.wiringPiSetup()
 
-        # Init_Motor()
+        # Init_Motor
         wiringpi.pinMode(BIN2, wiringpi.OUTPUT)
         wiringpi.pinMode(BIN1, wiringpi.OUTPUT)
         wiringpi.pinMode(AIN2, wiringpi.OUTPUT)
@@ -59,14 +54,13 @@ class Robot:
         wiringpi.pinMode(GY80_AINT_1, wiringpi.INPUT)
         wiringpi.pinMode(GY80_M_DRDY, wiringpi.INPUT)
 
-        # Init_Usonic()
+        # Init_Usonic
         for i in range(len(echo_sensors_pins)):
             wiringpi.pinMode(echo_sensors_pins[i][0], wiringpi.OUTPUT)
             wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
             wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
 
-    def Cycle(self):
-        self.m_CycleNumber += 1
+    def ReadSensors(self):
 
         self.SetMove(-self.m_LeftWheel, -self.m_RightWheel, 0)
 
@@ -85,31 +79,26 @@ class Robot:
         self.m_DistFront = self.UsonicReadCM(
             echo_sensors_pins[4][0], echo_sensors_pins[4][1])
 
-        self.m_CycleMillis = millis
-
-    def delayMicroseconds(self, seconds):
-        time.sleep(seconds/1000000)
-
     def UsonicReadCM(self, trig, echo):
         wiringpi.digitalWrite(trig, wiringpi.HIGH)
-        self.delayMicroseconds(100)
+        delayMicroseconds(10)
         wiringpi.digitalWrite(trig, wiringpi.LOW)
 
-        startTime = micros()
-        stopTime = micros()
-        timeout = micros()
+        startTime = getTimeInMicros()
+        stopTime = getTimeInMicros()
+        timer = getTimeInMicros()
 
         while wiringpi.digitalRead(echo) == wiringpi.LOW:
-           startTime = micros()
-           if micros() - timeout >= 1000000:
+           startTime = getTimeInMicros()
+           if checkForTimeout(timer):
               print("TIMEOUT!")
               return 0
 
-        timeout = micros()
+        timeout = getTimeInMicros()
 
         while wiringpi.digitalRead(echo) == wiringpi.HIGH:
-           stopTime = micros()
-           if micros() - timeout >= 1000000:
+           stopTime = getTimeInMicros()
+           if checkForTimeout(timer):
               print("TIMEOUT!")
               return 0
 
@@ -136,24 +125,8 @@ class Robot:
         wiringpi.digitalWrite(APHASE, lphase)
         wiringpi.digitalWrite(BPHASE, rphase)
 
-    def CheckTimeout(self, start_us, timeout_us):
-        res = 0
-        curr_us = micros()
-        if curr_us <= start_us:
-            if curr_us + 0xFFFFFFFF - start_us >= timeout_us:
-                res = 1
-            else:
-                res = 0
-        else:
-            if curr_us - start_us >= timeout_us:
-                res = 1
-            else:
-                res = 0
-
-        return res
-
     def Braitenberg(self):
-        self.Cycle()
+        self.ReadSensors()
 
         prox_sensors = [self.m_DistLeft, self.m_DistFrontLeft, self.m_DistFront,
                         self.m_DistFrontRight, self.m_DistRight]
@@ -177,46 +150,28 @@ class Robot:
         print([self.m_LeftWheel, self.m_RightWheel])
 
     def Fuzzy(self):
-        self.Cycle()
+        self.ReadSensors()
 
         sensors = [self.m_DistLeft, min([self.m_DistFrontLeft, self.m_DistFront, self.m_DistFrontRight]), self.m_DistRight]
         intSensors = [int(clamp(i, 10, 40)) for i in sensors]
-        bytesSent = self.m_Conn.send(json.dumps(intSensors).encode())
+        bytesSent = self.m_TcpClient.SendData(intSensors)
 
         print(str(bytesSent) + " bytes sent to Matlab")
 
-        rawData = json.dumps([0,0])
-        try:
-           self.m_Conn.settimeout(1)
-           rawData = self.m_Conn.recv(8).decode()
-           print("Data received! " + str(rawData))
-        except:
-            self.m_LeftWheel = 0
-            self.m_RightWheel = 0
-            rawData = json.dumps([0,0])
-            print("Timeout while receiving data from Matlab!")
-
-        decodedData = json.loads(rawData)
-
-        self.m_LeftWheel = clamp(decodedData[0], -UPPER_BOUND, UPPER_BOUND)
-        self.m_RightWheel = clamp(decodedData[1], -UPPER_BOUND, UPPER_BOUND)
+        dataReceived = self.m_TcpClient.RecvData()
+        
+        self.m_LeftWheel = clamp(dataReceived[0], -UPPER_BOUND, UPPER_BOUND)
+        self.m_RightWheel = clamp(dataReceived[1], -UPPER_BOUND, UPPER_BOUND)
 
         print(intSensors)
         print([self.m_LeftWheel, self.m_RightWheel])
 
     def ConnectTo(self, IP, Port):
-        if not self.bound:
-            print("Waiting for Matlab to cennect...")
-            self.m_Socket.bind((IP, Port))
-            self.m_Socket.listen(1)
+        self.m_TcpClient((IP,Port))
 
-            self.m_Conn, self.m_Addr = self.m_Socket.accept()
-            print("Matlab connected! Address" + str(self.m_Addr))
-            self.bound = True
-
-    def Stop(self):
+    def ShutDown(self):
         self.SetMove(0, 0, 0)
-        self.m_Socket.close()
+        self.m_TcpClient.Disconnect()
 
     def AdjustSpeed(self):
        if self.m_LeftWheel > 0 and self.m_LeftWheel < 40:
