@@ -11,6 +11,7 @@ def delayMicroseconds(seconds):
 
 def checkForTimeout(timeStarted, timeoutInMicros = 1000000):
     if (getTimeInMicros() - timeStarted) >= timeoutInSeconds:
+        print("TIMEOUT!")
         return True
     else:
         return False

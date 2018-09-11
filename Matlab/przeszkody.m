@@ -38,23 +38,6 @@ while 1
         elseif rightWheel < 0 && rightWheel > -40
             rightWheel = -50
         end
-%         leftWheel = result(1)
-%         rightWheel = result(2)
-        
-%         if (result(1) > 0) && (result(2) > 0)
-%             leftWheel = 40;
-%             rightWheel = 40;
-%         end
-%         
-%         if (result(1) < result(2)) 
-%             leftWheel = -40;
-%             rightWheel = 40;
-%         end
-%         
-%         if(result(1) > result(2))
-%             leftWheel = 40;
-%             rightWheel = -40;
-%         end
         
         fwrite(raspi, jsonencode({leftWheel;rightWheel}));
     end

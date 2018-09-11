@@ -1,8 +1,6 @@
 import wiringpi
-import socket
-import json
-from utils import *
 import connection
+from utils import *
 
 BIN2 = 0
 BIN1 = 1
@@ -60,18 +58,18 @@ class Robot:
             wiringpi.pinMode(echo_sensors_pins[i][1], wiringpi.INPUT)
             wiringpi.digitalWrite(echo_sensors_pins[i][0], wiringpi.LOW)
 
-    def ReadSensors(self):
+    def Cycle(self):
 
         self.SetMove(-self.m_LeftWheel, -self.m_RightWheel, 0)
 
         self.m_DistFrontLeft = self.UsonicReadCM(
             echo_sensors_pins[0][0], echo_sensors_pins[0][1])
 
-        self.m_DistRight = self.UsonicReadCM(
-            echo_sensors_pins[2][0], echo_sensors_pins[2][1])
-
         self.m_DistFrontRight = self.UsonicReadCM(
             echo_sensors_pins[1][0], echo_sensors_pins[1][1])
+
+        self.m_DistRight = self.UsonicReadCM(
+            echo_sensors_pins[2][0], echo_sensors_pins[2][1])
 
         self.m_DistLeft = self.UsonicReadCM(
             echo_sensors_pins[3][0], echo_sensors_pins[3][1])
@@ -91,7 +89,6 @@ class Robot:
         while wiringpi.digitalRead(echo) == wiringpi.LOW:
            startTime = getTimeInMicros()
            if checkForTimeout(timer):
-              print("TIMEOUT!")
               return 0
 
         timeout = getTimeInMicros()
@@ -99,7 +96,6 @@ class Robot:
         while wiringpi.digitalRead(echo) == wiringpi.HIGH:
            stopTime = getTimeInMicros()
            if checkForTimeout(timer):
-              print("TIMEOUT!")
               return 0
 
         travelTime = stopTime - startTime
@@ -126,11 +122,12 @@ class Robot:
         wiringpi.digitalWrite(BPHASE, rphase)
 
     def Braitenberg(self):
-        self.ReadSensors()
+        self.Cycle()
 
         prox_sensors = [self.m_DistLeft, self.m_DistFrontLeft, self.m_DistFront,
                         self.m_DistFrontRight, self.m_DistRight]
 
+        # normalize and round to 2 digits
         sensors = [round(1-(min(i, 40)/40), 2) for i in prox_sensors]
         wl = [-8, -20, 30, 4, 4]
         wr = [4, 4, -30, -20, -8]
@@ -150,7 +147,7 @@ class Robot:
         print([self.m_LeftWheel, self.m_RightWheel])
 
     def Fuzzy(self):
-        self.ReadSensors()
+        self.Cycle()
 
         sensors = [self.m_DistLeft, min([self.m_DistFrontLeft, self.m_DistFront, self.m_DistFrontRight]), self.m_DistRight]
         intSensors = [int(clamp(i, 10, 40)) for i in sensors]
